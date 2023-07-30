@@ -1,0 +1,9 @@
+target
+testsuite
+wabt
+build
+valid
+invalid
+malformed
+.vscode
+.DS_Store

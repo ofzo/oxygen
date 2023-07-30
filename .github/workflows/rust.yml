@@ -1,0 +1,59 @@
+name: Rust
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '0 9 * * *'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+
+  test-linux:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install dependence
+      run: sudo apt-get install -y cmake ninja-build
+    - name: Update testsuite
+      run: git clone https://github.com/WebAssembly/testsuite
+    - name: Update wabt
+      run: git clone https://github.com/WebAssembly/wabt
+    - name: Build wabt
+      working-directory: wabt
+      run: git submodule update --init &&  mkdir build && cd build && cmake .. && cmake --build .
+    - name: Generate tests
+      run: bash ./update.test.sh
+    - name: Run tests
+      run: cargo test --verbose
+
+  # test-macos:
+
+  #   runs-on: macos-latest
+
+  #   steps:
+  #   - uses: actions/checkout@v2
+  #     with:
+  #       submodules: "recursive"
+  #   - name: Install cmake
+  #     run: brew install -y cmake
+  #   - name: Build wabt
+  #     run: cd wabt && mkdir build && cd build && cmake .. && cmake --build .
+  #   - name: Generate tests
+  #     run: bash ./update.test.sh
+  #   - name: Run tests
+  #     run: cargo test --verbose
+
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build
+      run: cargo build --verbose
