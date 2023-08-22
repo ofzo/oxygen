@@ -1,49 +1,52 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
 </head>
 
 <body>
-
     <script type="module">
-        fetch("/fib.c.wasm").then(res => res.arrayBuffer()).then(res => {
-            let data = new ArrayBuffer()
-            return WebAssembly.instantiate(res, {
-                wasi_snapshot_preview1: {
-                    proc_exit: () => { console.log("exit"); return 0 },
-                    fd_write: (fd, offset, len, nwrite) => {
-                        console.log(offset, len)
-                        let data = ""
-                        let data2 = []
-                        let num = 0;
-                        let view32 = new Uint32Array(exports.memory.buffer);
-                        let view8 = new Uint8Array(exports.memory.buffer);
-                        for (let i = 0; i < len; i++) {
-                            let oft = offset >> 2;
-                            let ptr = view32[oft];
-                            let l = view32[oft + 1];
-                            offset += 8;
-                            for (let j = 0; j < l; j++) {
-                                data2.push(view8[ptr + j]);
-                                data += String.fromCharCode(view8[ptr + j])
+        fetch("/oxygen.wasm")
+            .then((res) => res.arrayBuffer())
+            .then((res) => {
+                let data = new ArrayBuffer();
+                return WebAssembly.instantiate(res, {
+                    wasi_snapshot_preview1: {
+                        proc_exit: () => {
+                            console.log("exit");
+                            return 0;
+                        },
+                        fd_write: (fd, offset, len, nwrite) => {
+                            console.log(offset, len);
+                            let data = "";
+                            let data2 = [];
+                            let num = 0;
+                            let view32 = new Uint32Array(exports.memory.buffer);
+                            let view8 = new Uint8Array(exports.memory.buffer);
+                            for (let i = 0; i < len; i++) {
+                                let oft = offset >> 2;
+                                let ptr = view32[oft];
+                                let l = view32[oft + 1];
+                                offset += 8;
+                                for (let j = 0; j < l; j++) {
+                                    data2.push(view8[ptr + j]);
+                                    data += String.fromCharCode(view8[ptr + j]);
+                                }
+                                num += l;
                             }
-                            num += l;
-                        }
-                        view32[nwrite >> 2] = num;
-                        console.log(data, data2)
-                        return 0
+                            view32[nwrite >> 2] = num;
+                            console.log(data, data2);
+                            return 0;
+                        },
                     },
-                }
-            }).then(exports => {
-                window.exports = exports.instance.exports
-            })
-        })
+                }).then((exports) => {
+                    window.exports = exports.instance.exports;
+                });
+            });
     </script>
-
 </body>
 
 </html>
