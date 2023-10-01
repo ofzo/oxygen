@@ -4,7 +4,7 @@ use std::fmt::Display;
 use std::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Shl, Sub};
 use std::rc::Rc;
 
-use anyhow::ensure;
+use anyhow::{ensure, Context};
 
 use super::constants::{self, PAGE_SIZE};
 use super::section::code::FuncBody;
@@ -115,11 +115,9 @@ where
         Ok(u32::from_le_bytes(version.try_into().unwrap()))
     }
     fn parse_magic(&mut self) -> anyhow::Result<Vec<u8>> {
-        let header = self.peek_bytes(4)?;
-        anyhow::ensure!(
-            header == constants::MAGIC_NUMBER,
-            "Magic header not detected"
-        );
+        let header = self
+            .peek_bytes(4)
+            .with_context(|| "Magic header not detected")?;
         self.skip(4);
         Ok(header)
     }
@@ -260,7 +258,7 @@ pub enum ImportKind {
 pub type ImportObject = HashMap<String, HashMap<String, ImportKind>>;
 
 impl WasmModule {
-    pub fn instance(&mut self, import_object: Option<ImportObject>) {
+    pub fn instance(&mut self, import_object: Option<ImportObject>) -> anyhow::Result<()> {
         self.pc = 0;
         self.sp = 0;
         self.csp = 0;
@@ -272,11 +270,16 @@ impl WasmModule {
         for ipt in section.import.entries.iter() {
             let v = import_object
                 .as_ref()
-                .unwrap()
+                .with_context(|| format!("missing import"))?
                 .get(&ipt.mod_name)
-                .unwrap()
+                .with_context(|| format!("missing import mod `{}`", ipt.mod_name))?
                 .get(&ipt.field_name)
-                .unwrap();
+                .with_context(|| {
+                    format!(
+                        "missing import field `{}` from {}",
+                        ipt.field_name, ipt.mod_name
+                    )
+                })?;
             match &ipt.kind {
                 import::Kind::Func(tyidx) => match v {
                     ImportKind::Func(f) => {
@@ -394,6 +397,7 @@ impl WasmModule {
                 .insert(export.name.clone(), export.kind.clone());
         }
         self.section = section;
+        return Ok(());
     }
     pub fn stack_check(&mut self) {
         if self.stack.len() <= self.sp {
@@ -1145,12 +1149,10 @@ impl WasmModule {
         }
     }
     pub fn start(&mut self) -> anyhow::Result<()> {
-        let start = self.exports.get(&"_start".to_string());
-        ensure!(
-            start.is_some(),
-            "must be have `_start` function on run a wasm module"
-        );
-        let start = start.unwrap();
+        let start = self
+            .exports
+            .get(&"_start".to_string())
+            .with_context(|| "must be have `_start` function on run a wasm module")?;
         ensure!(
             matches!(start, ExportKind::Func(_)),
             "`_start` must be a function"

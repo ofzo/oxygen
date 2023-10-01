@@ -1,3 +1,4 @@
+use anyhow::Context;
 use oxygen::runtime::{
     decoder::{ImportKind, WasmModule, WasmValue},
     OxygenRuntime,
@@ -29,7 +30,7 @@ fn main() -> anyhow::Result<()> {
     match cmd.command {
         Command::Run(args) => {
             let url = Path::new(&args.url);
-            let buf = read(url).unwrap();
+            let buf = read(url).context(format!("can't read file {:?}", url))?;
 
             let mut rt = OxygenRuntime::default();
             rt.load(buf)?;
@@ -46,13 +47,13 @@ fn main() -> anyhow::Result<()> {
                 );
                 import_object.insert(format!("wasi_snapshot_preview1"), wasi_snapshot_preview1);
 
-                wasm.instance(Some(import_object));
+                wasm.instance(Some(import_object))?;
                 wasm.start()?;
             }
         }
         Command::Inspect(args) => {
             let url = Path::new(&args.url);
-            let buf = read(url).unwrap();
+            let buf = read(url).context(format!("can't read file {:?}", url))?;
 
             let mut rt = OxygenRuntime::default();
             rt.load(buf)?;
@@ -152,7 +153,7 @@ fn test_run() {
             ImportKind::Func(wasi_snapshot_preview1_proc_exit),
         );
         import_object.insert(format!("wasi_snapshot_preview1"), wasi_snapshot_preview1);
-        wasm.instance(Some(import_object));
+        wasm.instance(Some(import_object)).unwrap();
 
         let _ = wasm.start();
     }

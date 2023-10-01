@@ -47,7 +47,6 @@ fn test_parse() {
     ];
     let mut wasm = decoder::WasmModule::default(buf);
     wasm.decode().unwrap();
-    println!("{}", wasm);
 
     assert_eq!(wasm.version, 0x01);
     assert_eq!(wasm.section.types.type_count, 0x01);
