@@ -1,23 +1,23 @@
-rm -rf ./crates/decode/tests/*
-if [[ ! -e  ./crates/decode/tests ]];
+rm -rf ./tests/*
+if [[ ! -e  ./tests ]];
 then
-    mkdir ./crates/decode/tests
+    mkdir ./tests
 fi
-touch ./crates/decode/tests/wasm.rs
+touch ./tests/wasm.rs
 
-echo "use oxygen::runtime::AsmccRuntime;" >> ./crates/decode/tests/wasm.rs
-echo "use std::{env, fs::read, path::Path};" >> ./crates/decode/tests/wasm.rs
+echo "use oxygen::runtime::OxygenRuntime;" >> ./tests/wasm.rs
+echo "use std::{env, fs::read, path::Path};" >> ./tests/wasm.rs
 
 function gene(){
     name=$(echo $1 | sed 's/[\.-]/_/g')
     echo "
 #[test]
 fn test_$name() {
-    let mut rt = AsmccRuntime::default();
+    let mut rt = OxygenRuntime::default();
 
     let url = Path::new(\"./testsuite/valid/$1\");
     let root = env::current_dir().unwrap();
-    let root = root.parent().unwrap().parent().unwrap();
+    // let root = root.parent().unwrap().parent().unwrap();
     let url = root.join(url);
     let url = url.canonicalize().unwrap();
     let buf = read(url).unwrap();
@@ -30,7 +30,7 @@ fn test_$name() {
     };
     assert!(r, \"Failed to load wasm $1\");
 }
-" >> ./crates/decode/tests/wasm.rs
+" >> ./tests/wasm.rs
 echo "Info: Generate $1 test success"
 }
 
@@ -44,6 +44,7 @@ then
     for file in $(ls ./testsuite/valid/)
     do
        gene $file
+       echo "Generate $file test case success"
     done
 else
     gene "$1"

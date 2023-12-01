@@ -11,8 +11,7 @@ env:
 
 jobs:
 
-  test-linux:
-
+  test:
     runs-on: ubuntu-latest
 
     steps:
@@ -29,25 +28,7 @@ jobs:
     - name: Generate tests
       run: bash ./update.test.sh
     - name: Run tests
-      run: cargo test --verbose
-
-  # test-macos:
-
-  #   runs-on: macos-latest
-
-  #   steps:
-  #   - uses: actions/checkout@v2
-  #     with:
-  #       submodules: "recursive"
-  #   - name: Install cmake
-  #     run: brew install -y cmake
-  #   - name: Build wabt
-  #     run: cd wabt && mkdir build && cd build && cmake .. && cmake --build .
-  #   - name: Generate tests
-  #     run: bash ./update.test.sh
-  #   - name: Run tests
-  #     run: cargo test --verbose
-
+      run: cargo test --package oxygen --test wasm --verbose
 
   build:
 
